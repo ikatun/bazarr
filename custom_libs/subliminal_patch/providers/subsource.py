@@ -22,6 +22,7 @@ from subliminal.exceptions import AuthenticationError, ConfigurationError
 from subliminal_patch.exceptions import APIThrottled, ForbiddenError, TooManyRequests
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.identity import enabled as strict_imdb_enabled, normalize_imdb, required as identity_required
 from subliminal_patch.providers import Provider, utils
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 
@@ -138,7 +139,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         return f'https://{self.server_hostname}/api/v1/'
 
     @region.cache_on_arguments(expiration_time=TITLES_EXPIRATION_TIME)
-    def search_titles(self, title: str, imdb_id: str, season: int = None) -> Optional[int]:
+    def search_titles(self, title: str, imdb_id: str, season: int = None, require_identity=None) -> Optional[int]:
         """
         Searches for the ID of a movie or TV show title on an external database using either title, IMDb ID,
         and optionally the season number. The method sends a request to the provider's API server, deserializes
@@ -179,6 +180,14 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
 
         # deserialize results
         results_dict = results.json()['data']
+
+        if strict_imdb_enabled() and require_identity is not False:
+            for result in results_dict:
+                actual = normalize_imdb(result.get('imdbId'))
+                if actual and actual == normalize_imdb(imdb_id):
+                    return (result['movieId'], actual)
+            logger.info('IMDb gate: SubSource search returned no verified identity')
+            return None
 
         if imdb_id and not results_dict:
             logger.debug(f'No results for IMDb ID {imdb_id}. Falling back to text search for: {title}')
@@ -232,7 +241,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                     break
             if matched:
                 if not self.video.year or self.video.year == int(result['releaseYear']):
-                    title_id = result['movieId']
+                    title_id = (result['movieId'], normalize_imdb(result.get('imdbId')))
                     break
             else:
                 continue
@@ -265,16 +274,20 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
 
         if isinstance(self.video, Episode) and self.video.series_imdb_id:
             imdb_id = self.video.series_imdb_id
-            title_id = self.search_titles(title, imdb_id, season=self.video.season)
+            title_id = self.search_titles(title, imdb_id, season=self.video.season, require_identity=identity_required(video))
         elif isinstance(self.video, Movie) and self.video.imdb_id:
             imdb_id = self.video.imdb_id
-            title_id = self.search_titles(title, imdb_id)
+            title_id = self.search_titles(title, imdb_id, require_identity=identity_required(video))
         else:
             title_id = None
 
         if not title_id:
             logger.debug('No title id found for this video')
             return []
+
+        identity_imdb_id = None
+        if isinstance(title_id, tuple):
+            title_id, identity_imdb_id = title_id
 
         # we make sure to get only one language to search for
         if len(languages):
@@ -361,6 +374,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                         uploader=self._get_uploader_name(item),
                     )
 
+                subtitle.identity_imdb_id = identity_imdb_id
                 subtitles.append(subtitle)
 
         return subtitles

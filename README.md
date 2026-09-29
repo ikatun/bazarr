@@ -1,3 +1,5 @@
+> **Fork:** Adds conditional IMDb verification for ambiguous titles and GHCR Docker builds. See [FORK.md](FORK.md) for policy, configuration and deployment.
+
 <p align="center">
   <img src="frontend/public/images/logo128.png" alt="Bazarr logo" width="96">
 </p>

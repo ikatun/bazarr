@@ -459,6 +459,9 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                         hash_matched=moviehash_match,
                         imdb_match=imdb_match
                     )
+                    feature = item['attributes']['feature_details']
+                    subtitle.identity_imdb_id = feature.get(
+                        'parent_imdb_id' if isinstance(self.video, Episode) else 'imdb_id')
                     subtitle.get_matches(self.video)
                     subtitles.append(subtitle)
 

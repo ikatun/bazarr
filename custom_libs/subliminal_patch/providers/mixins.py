@@ -62,6 +62,9 @@ class ProviderSubtitleArchiveMixin(object):
     needs subtitle.episode, subtitle.season, subtitle.matches, subtitle.releases and subtitle.asked_for_episode to work
     """
     def get_subtitle_from_archive(self, subtitle, archive):
+        from subliminal_patch.identity import enabled, strict_archive_content
+        if enabled() and hasattr(subtitle, '_identity_video'):
+            return strict_archive_content(subtitle, archive)
         # extract subtitle's content
         subs_in_archive = []
         for name in archive.namelist():

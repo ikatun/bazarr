@@ -8,6 +8,7 @@ on:
 
 jobs:
   Release-Nightly:
+    if: github.repository == 'morpheus65535/bazarr'
     runs-on: ubuntu-latest
     steps:
       - name: Execute

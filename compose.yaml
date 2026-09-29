@@ -1,0 +1,42 @@
+services:
+  bazarr:
+    image: ghcr.io/ikatun/bazarr:latest
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    group_add:
+      - "${MEDIA_GID:-100}"
+    ports:
+      - "6767:6767"
+    environment:
+      TZ: ${TZ:-Europe/Zagreb}
+      BAZARR_REQUIRE_IMDB: ambiguous
+      BAZARR_TMDB_KEY_FILE: /run/secrets/tmdb_api_key
+    volumes:
+      - bazarr_config:/config
+      - ${MEDIA_PATH:-/mnt/user/data}:/data
+    secrets:
+      - tmdb_api_key
+
+  ambiguity-cache:
+    image: ghcr.io/ikatun/bazarr:latest
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    command: ["scan-ambiguity"]
+    healthcheck:
+      disable: true
+    environment:
+      BAZARR_TMDB_KEY_FILE: /run/secrets/tmdb_api_key
+    volumes:
+      - bazarr_config:/config
+    secrets:
+      - tmdb_api_key
+    depends_on:
+      bazarr:
+        condition: service_healthy
+
+volumes:
+  bazarr_config:
+
+secrets:
+  tmdb_api_key:
+    file: ./secrets/tmdb-api-key

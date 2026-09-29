@@ -26,3 +26,7 @@ VERSION
 # Allow
 !*.dll
 
+
+# Local fork runtime credentials and Docker secrets
+/secrets/
+/.env

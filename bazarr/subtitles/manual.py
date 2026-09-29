@@ -8,6 +8,7 @@ import subliminal
 
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
+from subliminal_patch.identity import authorize
 from subliminal_patch.core_persistent import list_all_subtitles, download_subtitles
 from subliminal_patch.score import compute_score, DEFAULT_SCORES
 
@@ -201,6 +202,8 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
     subtitle.mods = get_array_from(settings.general.subzero_mods)
     video = get_video(force_unicode(path), title, sceneName, providers={provider}, media_type=media_type)
     if video:
+        if not authorize(subtitle, video):
+            return 'IMDb verification rejected this subtitle: ' + subtitle.identity_rejection
         try:
             if provider:
                 download_subtitles([subtitle], _get_pool(media_type, profile_id))

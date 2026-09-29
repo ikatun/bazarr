@@ -47,7 +47,7 @@ class FileHandlerFormatter(logging.Formatter):
             if not value:
                 return match.group(0)
             prefix = match.group(0)[:match.start(2) - match.start(0)]
-            return f'{prefix}{value[:-len(self.APIKEY_MASK)]}{self.APIKEY_MASK}'
+            return f'{prefix}{self.APIKEY_MASK}'
 
         return re.sub(self.APIKEY_RE, mask, s)
 
@@ -155,6 +155,7 @@ def configure_logging(debug=False):
     logger.handlers = []
 
     logger.setLevel(log_level)
+    logging.getLogger("subliminal_patch.identity").setLevel(logging.INFO)
 
     # Console logging
     ch = logging.StreamHandler()

@@ -28,6 +28,7 @@ from subzero.language import Language
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from .utils import get_archive_from_bytes
 from .utils import get_subtitle_from_archive
+from subliminal_patch.identity import enabled as strict_imdb_enabled, strict_archive_content
 from .utils import update_matches
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ class SuperSubtitlesSubtitle(Subtitle):
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
         self.imdb_id = imdb_id
+        self.identity_imdb_id = imdb_id
         self.is_pack = True
         self.matches = set()
 
@@ -348,7 +350,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 link = self.server_url + '/index.php?action=letolt&felirat=' + str(sub['id'])
 
                 # For episodes we open the series page so all subtitles imdb_id must be the same
-                if series_imdb_id is None:
+                if strict_imdb_enabled() or series_imdb_id is None:
                     series_imdb_id = self.find_imdb_id(sub['id'])
 
                 # Let's create a SuperSubtitlesSubtitle instance from the data that we got and add it to the list
@@ -557,4 +559,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitle.content = r.content
             return
 
-        subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.episode or None)
+        if strict_imdb_enabled():
+            subtitle.content = strict_archive_content(subtitle, archive)
+        else:
+            subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.episode or None)

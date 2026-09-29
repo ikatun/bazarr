@@ -25,6 +25,7 @@ from concurrent.futures import as_completed
 from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
 from .score import compute_score, MAX_SCORES
+from .identity import authorize, enabled as strict_imdb_enabled
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
@@ -383,6 +384,8 @@ class SZProviderPool(ProviderPool):
             out = []
             for s in results:
                 self.lang_equals.update_subtitle(s)
+                if not authorize(s, video):
+                    continue
 
                 if not self.blacklist.is_valid(provider, s):
                     continue
@@ -461,6 +464,11 @@ class SZProviderPool(ProviderPool):
         :return: `True` if the subtitle has been successfully downloaded, `False` otherwise.
         :rtype: bool
         """
+        if strict_imdb_enabled():
+            video = getattr(subtitle, '_identity_video', None)
+            if video is None or not authorize(subtitle, video):
+                subtitle.content = None
+                return False
         # check discarded providers
         if subtitle.provider_name in self.discarded_providers:
             logger.warning('Provider %r is discarded', subtitle.provider_name)
@@ -558,6 +566,8 @@ class SZProviderPool(ProviderPool):
         unsorted_subtitles = []
 
         for s in subtitles:
+            if not authorize(s, video):
+                continue
             # get the matches
             if s.language.basename not in [x.basename for x in languages]:
                 logger.debug("%r: Skipping, language not searched for", s)
