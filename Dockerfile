@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1 \
     BAZARR_CONFIG_DIR=/config \
     BAZARR_REQUIRE_IMDB=ambiguous
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates ffmpeg mediainfo unrar-free unzip tini \
+      ca-certificates ffmpeg mediainfo unar unzip tini \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements.txt ./
@@ -31,6 +31,7 @@ COPY docker/entrypoint.sh /usr/local/bin/bazarr-entrypoint
 RUN chmod 755 /usr/local/bin/bazarr-entrypoint \
     && mkdir -p /config /app/bin \
     && chown 1000:1000 /config /app/bin \
+    && PYTHONPATH=/app/libs python -c "import rarfile; rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, sevenzip=False, force=True)" \
     && python tests/test_strict_imdb_standalone.py \
     && python tests/test_ambiguity_standalone.py
 USER 1000:1000

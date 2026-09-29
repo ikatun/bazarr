@@ -27,7 +27,9 @@ try:
             print('Fresh container UI and JavaScript assets returned HTTP 200')
             break
         except Exception:
-            if attempt == 89:
+            running = subprocess.check_output(
+                ['docker', 'inspect', '--format', '{{.State.Running}}', name], text=True).strip()
+            if attempt == 89 or running != 'true':
                 subprocess.run(['docker', 'logs', name], check=False)
                 raise
             time.sleep(2)
