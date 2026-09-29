@@ -8,10 +8,8 @@ COPY frontend/ ./
 RUN npm run build
 
 FROM python:3.12-slim-bookworm AS runtime
-ARG VERSION=1.6.2-fork
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    BAZARR_VERSION=${VERSION} \
     BAZARR_CONFIG_DIR=/config \
     BAZARR_REQUIRE_IMDB=ambiguous
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -34,10 +32,13 @@ RUN chmod 755 /usr/local/bin/bazarr-entrypoint \
     && PYTHONPATH=/app/libs python -c "import rarfile; rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, sevenzip=False, force=True)" \
     && python tests/test_strict_imdb_standalone.py \
     && python tests/test_ambiguity_standalone.py
+ARG VERSION=1.6.2-fork
+ENV BAZARR_VERSION=${VERSION}
 USER 1000:1000
 EXPOSE 6767
 STOPSIGNAL SIGINT
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6767/', timeout=4).read(1)"
-ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/usr/local/bin/bazarr-entrypoint"]
+# Bazarr EXIT_INTERRUPT=-100 becomes 156 on Unix; normalize expected shutdown.
+ENTRYPOINT ["/usr/bin/tini", "-e", "156", "-g", "--", "/usr/local/bin/bazarr-entrypoint"]
 CMD ["serve"]
