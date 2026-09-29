@@ -17,3 +17,6 @@ venv
 **/*.pem
 **/id_rsa*
 **/id_ed25519*
+
+# Public CA trust bundle required by vendored certifi
+!libs/certifi/cacert.pem
