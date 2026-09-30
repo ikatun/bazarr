@@ -75,6 +75,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     message = (f"{downloaded_language}{modifier_string} subtitles {action} from {downloaded_provider} with a score of "
                f"{percent_score}%.")
 
+    member = getattr(subtitle, 'identity_archive_member', None)
+    if member:
+        message += f" Archive member: {member}."
+
     sync_checker = _defaul_sync_checker
     logging.debug("Sync checker: %s", sync_checker)
 

@@ -63,7 +63,7 @@ class ProviderSubtitleArchiveMixin(object):
     """
     def get_subtitle_from_archive(self, subtitle, archive):
         from subliminal_patch.identity import enabled, strict_archive_content
-        if enabled() and hasattr(subtitle, '_identity_video'):
+        if os.environ.get('BAZARR_ARCHIVE_GATE', 'true').lower() != 'false' and hasattr(subtitle, '_identity_video'):
             return strict_archive_content(subtitle, archive)
         # extract subtitle's content
         subs_in_archive = []

@@ -26,6 +26,7 @@ from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
 from .score import compute_score, MAX_SCORES
 from .identity import authorize, enabled as strict_imdb_enabled
+from .archive_rejections import previous_rejection, remember_rejection
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
@@ -469,11 +470,20 @@ class SZProviderPool(ProviderPool):
             if video is None or not authorize(subtitle, video):
                 subtitle.content = None
                 return False
+        reason = previous_rejection(subtitle)
+        if reason:
+            logger.info('Archive gate: previously rejected provider=%s subtitle=%s reason=%s',
+                        subtitle.provider_name, subtitle.id, reason)
+            subtitle.content = None
+            subtitle.content_rejection = reason
+            return False
         # check discarded providers
         if subtitle.provider_name in self.discarded_providers:
             logger.warning('Provider %r is discarded', subtitle.provider_name)
             return False
 
+        subtitle.identity_archive_rejection = None
+        subtitle.identity_archive_member = None
         logger.info('Downloading subtitle %r', subtitle)
         tries = 0
 
@@ -524,6 +534,10 @@ class SZProviderPool(ProviderPool):
                          subtitle.provider_name, DOWNLOAD_RETRY_SLEEP)
             time.sleep(DOWNLOAD_RETRY_SLEEP)
 
+        archive_reason = getattr(subtitle, 'identity_archive_rejection', None)
+        if archive_reason and not subtitle.content:
+            remember_rejection(subtitle, archive_reason)
+            return False
         # check subtitle validity
         if not subtitle.is_valid():
             logger.error('Invalid subtitle')

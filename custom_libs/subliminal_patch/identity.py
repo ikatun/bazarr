@@ -52,6 +52,7 @@ def verify(subtitle, video):
 
 
 def authorize(subtitle, video):
+    subtitle._identity_video = video
     if not enabled():
         return True
     strict = required(video)
@@ -71,27 +72,15 @@ def authorize(subtitle, video):
 
 
 def strict_archive_content(subtitle, archive):
-    """Select the exact episode from packs; never fall back to an unrelated file."""
-    from guessit import guessit
+    """Resolve an archive member conservatively, using the actual target video."""
+    from .archive_identity import select_member
     from subliminal.subtitle import fix_line_ending
-    video = getattr(subtitle, "_identity_video", None)
-    names = [name for name in archive.namelist()
-             if name.lower().endswith((".srt", ".sub", ".ssa", ".ass"))]
-    for name in names:
-        if isinstance(video, Episode):
-            guess = guessit(name, {"type": "episode"})
-            # A single episode-specific upload may have a generic filename;
-            # a pack must have explicit season and episode metadata.
-            pack = getattr(subtitle, "episode", None) in (None, 0) or len(names) > 1
-            season, episode = guess.get("season"), guess.get("episode")
-            if season is not None and season != video.season:
-                continue
-            if episode is not None and episode != video.episode:
-                continue
-            if pack and (season != video.season or episode != video.episode):
-                continue
-        subtitle.identity_archive_member = name
-        logger.info("IMDb gate: selected archive member %s", name)
-        return fix_line_ending(archive.read(name))
-    logger.warning("IMDb gate: no verified episode member in archive")
-    return None
+    name, reason = select_member(subtitle, archive)
+    subtitle.identity_archive_rejection = reason
+    if name is None:
+        logger.warning("Archive gate: provider=%s subtitle=%s rejected=%s",
+                       subtitle.provider_name, subtitle.id, reason)
+        return None
+    subtitle.identity_archive_member = name
+    logger.info("Archive gate: selected member %s", name)
+    return fix_line_ending(archive.read(name))

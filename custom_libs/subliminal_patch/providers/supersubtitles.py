@@ -1,5 +1,6 @@
 # coding=utf-8
 import logging
+import os
 from random import randint
 import re
 import time
@@ -559,7 +560,7 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
             subtitle.content = r.content
             return
 
-        if strict_imdb_enabled():
+        if os.environ.get("BAZARR_ARCHIVE_GATE", "true").lower() != "false":
             subtitle.content = strict_archive_content(subtitle, archive)
         else:
             subtitle.content = get_subtitle_from_archive(archive, episode=subtitle.episode or None)

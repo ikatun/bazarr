@@ -96,3 +96,28 @@ BAZARR_CONFIG_DIR=/path/to/config python tests/scan_ambiguity.py --limit 25
 The live library/provider test scripts and their output are private operational
 artifacts and are deliberately not included. Upstream release automation is
 retained, with its scheduled release job restricted to the upstream repository.
+
+
+## Archive member identity
+
+Archive extraction checks season and episode independently of score flags.
+An explicit episode title must agree with the library title after punctuation
+and case normalization, including coordinate-only basenames inside release
+folders. Clearly labeled extras folders and unnumbered bonus material are
+excluded. Combined members cannot serve a single-episode video. Different
+matching versions are rejected as ambiguous; byte-identical duplicates are safe.
+A single episode-specific upload may use a generic basename.
+
+`BAZARR_ARCHIVE_GATE=true` (default) enables these additional checks for
+SuperSubtitles and the shared provider archive mixin. Set it to `false` to
+restore legacy archive selection. Existing IMDb checks are independent.
+Other providers with their own extractors are not automatically covered.
+The selected archive member is included in the normal download history message.
+A rejected archive candidate is remembered for seven days for its provider ID,
+language and target media/episode identity; it does not block the whole pack for
+other episodes or throttle the provider. Cache defaults to
+`archive-identity` under `BAZARR_CONFIG_DIR`; override with `BAZARR_ARCHIVE_CACHE`.
+
+These checks use filenames and metadata only. They do not transcribe audio,
+contact an AI service or establish correctness of mislabeled subtitle dialogue.
+Separate audio/content auditing can be performed outside Bazarr.
