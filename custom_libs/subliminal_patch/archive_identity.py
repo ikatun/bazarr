@@ -14,6 +14,24 @@ def title_key(text):
     return re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", text).lower())
 
 
+def title_parts(text):
+    # Providers spell multipart titles as "(1)", "Part I" or omit the
+    # marker. Explicit conflicting parts remain a rejection.
+    match = re.search(r'(?:\(\s*(\d+|[ivx]+)\s*\)|(?:part|pt)\.?[ ._-]*(\d+|[ivx]+))\s*$', text, re.I)
+    if not match:
+        return title_key(text), None
+    part = (match[1] or match[2]).lower()
+    roman = {'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5}
+    number = int(part) if part.isdigit() else roman.get(part, part)
+    return title_key(text[:match.start()]), number
+
+
+def titles_agree(actual, expected):
+    a, ap = title_parts(actual)
+    e, ep = title_parts(expected)
+    return a == e and (ap is None or ep is None or ap == ep)
+
+
 def select_member(subtitle, archive):
     video = getattr(subtitle, '_identity_video', None)
     names = [n for n in archive.namelist()
@@ -53,7 +71,7 @@ def select_member(subtitle, archive):
             if not actual and re.match(r'^(?:s\d+e\d+|\d+x\d+)\b', filename, re.I):
                 actual = local_guess.get('title')
             expected = getattr(video, 'title', None)
-            if actual and expected and title_key(actual) != title_key(expected):
+            if actual and expected and not titles_agree(actual, expected):
                 continue
         candidates.append(name)
     if not candidates:

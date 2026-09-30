@@ -14,7 +14,7 @@ root = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(root/'custom_libs'), str(root/'libs')]
 from subliminal.video import Episode
 from subzero.language import Language
-from subliminal_patch.archive_identity import select_member
+from subliminal_patch.archive_identity import select_member, titles_agree
 from subliminal_patch.archive_rejections import previous_rejection, remember_rejection
 from subliminal_patch.core import SZProviderPool
 
@@ -51,6 +51,12 @@ class ContentTests(unittest.TestCase):
     def test_matching_title_only_filename(self):
         z = self.archive({'Show.S01.480p.x265/S1E03 - Parallax.srt': 'right'})
         self.assertIsNotNone(select_member(self.sub, z)[0])
+
+    def test_multipart_title_conventions(self):
+        self.assertTrue(titles_agree("Future's End Part I", "Future's End (1)"))
+        self.assertTrue(titles_agree('Basics', 'Basics (2)'))
+        self.assertFalse(titles_agree('Basics Part I', 'Basics (2)'))
+        self.assertFalse(titles_agree('Time and Again', 'Parallax'))
 
     def test_title_matches(self):
         z = self.archive({'Show.S01E03.Parallax.srt': 'right'})

@@ -102,7 +102,8 @@ retained, with its scheduled release job restricted to the upstream repository.
 
 Archive extraction checks season and episode independently of score flags.
 An explicit episode title must agree with the library title after punctuation
-and case normalization, including coordinate-only basenames inside release
+and case normalization. Conventional multipart title markers are normalized;
+explicit conflicting parts are rejected. This includes coordinate-only basenames inside release
 folders. Clearly labeled extras folders and unnumbered bonus material are
 excluded. Combined members cannot serve a single-episode video. Different
 matching versions are rejected as ambiguous; byte-identical duplicates are safe.
