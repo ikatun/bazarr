@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -128,7 +129,8 @@ class EpisodesBlacklist(Resource):
                               provider=provider,
                               subs_id=subs_id,
                               language=language)
-                episode_download_subtitles(no=sonarr_episode_id)
+                if os.environ.get("BAZARR_EXTERNAL_ORCHESTRATION") != "1":
+                    episode_download_subtitles(no=sonarr_episode_id)
                 event_stream(type='episode-history')
                 return '', 200
 
