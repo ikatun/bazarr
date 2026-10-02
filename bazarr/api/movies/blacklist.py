@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import os
 import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -120,7 +121,8 @@ class MoviesBlacklist(Resource):
                                     provider=provider,
                                     subs_id=subs_id,
                                     language=language)
-                movies_download_subtitles(radarr_id)
+                if os.environ.get("BAZARR_EXTERNAL_ORCHESTRATION") != "1":
+                    movies_download_subtitles(radarr_id)
                 event_stream(type='movie-history')
                 return '', 200
 
