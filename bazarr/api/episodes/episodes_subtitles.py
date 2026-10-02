@@ -3,6 +3,7 @@
 import os
 
 from io import BytesIO
+from flask import request
 from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
@@ -14,6 +15,7 @@ from subtitles.mass_download.series import episode_download_specific_subtitles
 from subtitles.tools.delete import delete_subtitles
 
 from ..utils import authenticate
+from ..wait_for_search import wait_for_search
 
 api_ns_episodes_subtitles = Namespace('Episodes Subtitles', description='Download, upload or delete episodes subtitles')
 
@@ -38,10 +40,13 @@ class EpisodesSubtitles(Resource):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
 
-        episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
+        job_id = episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
                                             sonarr_episode_id=args.get('episodeid'),
                                             language=args.get('language'), hi=args.get('hi').capitalize(),
                                             forced=args.get('forced').capitalize(), job_id=None)
+
+        if os.environ.get('BAZARR_EXTERNAL_ORCHESTRATION') == '1' and request.headers.get('X-Overlord-Wait') == '1':
+            return wait_for_search(job_id)
 
         return '', 204
 
