@@ -23,7 +23,7 @@ COPY bazarr/ bazarr/
 COPY custom_libs/ custom_libs/
 COPY libs/ libs/
 COPY migrations/ migrations/
-COPY tests/test_strict_imdb_standalone.py tests/test_ambiguity_standalone.py tests/scan_ambiguity.py tests/test_archive_identity_standalone.py tests/
+COPY tests/test_strict_imdb_standalone.py tests/test_ambiguity_standalone.py tests/scan_ambiguity.py tests/test_archive_identity_standalone.py tests/test_search_completion_standalone.py tests/
 COPY --from=frontend /src/frontend/build/ frontend/build/
 COPY docker/entrypoint.sh /usr/local/bin/bazarr-entrypoint
 RUN chmod 755 /usr/local/bin/bazarr-entrypoint \
@@ -32,7 +32,8 @@ RUN chmod 755 /usr/local/bin/bazarr-entrypoint \
     && PYTHONPATH=/app/libs python -c "import rarfile; rarfile.tool_setup(unrar=False, unar=True, bsdtar=False, sevenzip=False, force=True)" \
     && python tests/test_strict_imdb_standalone.py \
     && python tests/test_ambiguity_standalone.py \
-    && python tests/test_archive_identity_standalone.py
+    && python tests/test_archive_identity_standalone.py \
+    && python tests/test_search_completion_standalone.py
 ARG VERSION=1.6.2-fork
 ENV BAZARR_VERSION=${VERSION}
 USER 1000:1000
