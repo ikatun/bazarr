@@ -350,7 +350,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
                 f'BAZARR inserted this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')
 
     # Downloading missing subtitles
-    if defer_search:
+    if defer_search or os.environ.get('BAZARR_EXTERNAL_ORCHESTRATION') == '1':
         logging.debug(
             f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this movie: '
             f'{path_mappings.path_replace_movie(movie["path"])}')

@@ -211,7 +211,7 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
     if not series_data:
         pass
     else:
-        if defer_search:
+        if defer_search or os.environ.get('BAZARR_EXTERNAL_ORCHESTRATION') == '1':
             logging.debug(
                 f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this series: '
                 f'{series_data.title} ({series_data.year})')
@@ -329,7 +329,7 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
                 f'BAZARR inserted this episode into the database:{path_mappings.path_replace(episode["path"])}')
 
     # Downloading missing subtitles
-    if defer_search:
+    if defer_search or os.environ.get('BAZARR_EXTERNAL_ORCHESTRATION') == '1':
         logging.debug(
             f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this episode: '
             f'{path_mappings.path_replace(episode["path"])}')

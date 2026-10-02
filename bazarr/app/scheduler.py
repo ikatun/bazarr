@@ -305,6 +305,11 @@ class Scheduler:
             kwargs=dict(wait_for_completion=True))
 
     def __search_wanted_subtitles_task(self):
+        if os.environ.get("BAZARR_EXTERNAL_ORCHESTRATION") == "1":
+            for job_id in ("wanted_search_missing_subtitles_series", "wanted_search_missing_subtitles_movies"):
+                if self.aps_scheduler.get_job(job_id):
+                    self.aps_scheduler.remove_job(job_id)
+            return
         if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_series, 'interval', hours=int(settings.general.wanted_search_frequency),
