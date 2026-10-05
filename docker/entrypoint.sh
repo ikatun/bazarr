@@ -1,5 +1,8 @@
 #!/bin/sh
 set -eu
+# Subtitles and folders must be group-writable (664/775) for the other media-group services
+# (Sonarr, Radarr, Overlord), like the *arr images make them; the default umask 022 did not.
+umask "${UMASK:-002}"
 case "${1:-serve}" in
   serve)
     if [ "$#" -gt 0 ]; then shift; fi
